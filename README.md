@@ -8,7 +8,7 @@ This repository contains code to accompany the paper "Machine learning assisted 
 
 ## Installation
 
-Pytorch 
+Pytorch 1.4.0
 
 ## Usage
 
