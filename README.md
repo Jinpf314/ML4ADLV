@@ -14,4 +14,4 @@ Pytorch 1.4.0
 
 'DataGenerating' is designed to compute variables of interest in affine Deligne-Lusztig varieties.
 
-'MachineLearning' is dedicated to analyzing the generated data using machine learning techniques
+'MachineLearning' is dedicated to analyzing the generated data using machine learning techniques.
