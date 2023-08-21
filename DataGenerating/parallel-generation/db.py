@@ -8,11 +8,17 @@ import argparse
 dbHandler = None
 dbCursor = None
 dbTablename = None
+usePostgres=False
 def openDatabase(modulename = 'MySQLdb', host='localhost', port=3306, user='root', password='', db='adlv',tablename='adlv'):
-	global dbHandler, dbCursor, dbTablename
+	global dbHandler, dbCursor, dbTablename, usePostgres
 	db_module = importlib.import_module(modulename)
-	dbHandler = db_module.connect(host=host, port=port, user=user, password=password, db=db)
-	dbHandler.autocommit(True)
+	dbHandler = db_module.connect(host=host, port=port, user=user, password=password, database=db)
+	if isinstance(dbHandler.autocommit,bool):
+		dbHandler.autocommit = True
+		usePostgres=True
+	else:
+		dbHandler.autocommit(True)
+		usePostgres=False
 	dbTablename = tablename
 	dbCursor = dbHandler.cursor()
 
@@ -53,13 +59,13 @@ def decodeW(key):
 	assert(parts[1] == repr(functions.sigma_af))
 	assert(parts[2].startswith("[") and parts[2].endswith("]"))
 	assert(parts[3].startswith("(") and parts[3].endswith(")"))
-	classical = functions.W.from_reduced_word(int(s) for s in parts[2][1:-1].split(","))
+	classical = functions.W.from_reduced_word(int(s) for s in parts[2][1:-1].split(",")) if len(parts[2])>2 else functions.W.one()
 	mu_coeffs = [int(c) for c in parts[3][1:-1].split(",")]
 	assert(len(mu_coeffs) == len(functions.fundamental_coweights))
 	mu = sum(functions.coweight_lattice(c * cow) for (c,cow) in zip(mu_coeffs, functions.fundamental_coweights))
 	return functions.We_W0P.from_classical_weyl(classical) * functions.We_W0P.from_translation(mu)
 def generateNewtonPairings(b):
-	newton = b.newton_point
+	newton = b.newton_point if len(parts[2]>2) else functions.W.one()
 	pairings = tuple(newton.scalar(alpha) for alpha in functions.simple_roots)
 	return ','.join(str(p) for p in pairings)
 def fetchInfo(w, b):
@@ -118,25 +124,25 @@ def insertSingleInfo(w, b, empty=None, dimension=None, components=None, polynomi
 	statements = []
 	data = []
 	if empty is not None:
-		data.append(int(empty))
+		data.append(bool(empty))
 		statements.append('is_empty=%s')
 	if dimension is not None:
-		data.append(dimension)
+		data.append(int(dimension))
 		statements.append('dimension=%s')
 	if components is not None:
-		data.append(components)
+		data.append(int(components))
 		statements.append('components=%s')
 	if polynomial is not None:
 		data.append(polynomial_str)
 		statements.append('polynomial=%s')
 	if complete is not None:
-		data.append(int(complete))
+		data.append(bool(complete))
 		statements.append('is_complete=%s')
 	if count == 0:
 		if complete is None:
-			data.append(0)
+			data.append(False)
 			statements.append('is_complete=%s')
-		statement1 = '''INSERT IGNORE INTO [TABLENAME] (w_encoded, newton_pairings'''
+		statement1 = '''INSERT %s INTO [TABLENAME] (w_encoded, newton_pairings''' % ('' if usePostgres else 'IGNORE')
 		statement2 = ') VALUES (%s, %s'
 		for st in statements:
 			st1,st2 = st.split('=')
@@ -144,6 +150,8 @@ def insertSingleInfo(w, b, empty=None, dimension=None, components=None, polynomi
 			statement2 += ', '+st2
 		data = [wenc, newton_pairings] + data
 		statement = statement1 + statement2 + ')'
+		if usePostgres:
+			statement += ' ON CONFLICT DO NOTHING'
 		exec(statement, data)
 	else:
 		data += [wenc, newton_pairings]
@@ -322,7 +330,7 @@ def argparseAddCommonArguments(parser,tablename_default='adlv'):
 	parser.add_argument('--db-pythonmodule', default='MySQLdb', help='Name of the python3 module to import for the database connection')
 def initializeFromArgparse(args,createTableData=None):
 	functions.initializeFromArgparse(args)
-	openDatabase(host=args.db_host, port=args.db_port, user=args.db_user, password=args.db_pass, db=args.db_database, tablename=args.db_tablename)
+	openDatabase(host=args.db_host, port=args.db_port, user=args.db_user, password=args.db_pass, db=args.db_database, tablename=args.db_tablename, modulename=args.db_pythonmodule)
 	if createTableData is None or createTableData is True:
 		createTable()
 	elif createTableData is not False:
