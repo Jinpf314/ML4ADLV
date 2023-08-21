@@ -65,7 +65,7 @@ def decodeW(key):
 	mu = sum(functions.coweight_lattice(c * cow) for (c,cow) in zip(mu_coeffs, functions.fundamental_coweights))
 	return functions.We_W0P.from_classical_weyl(classical) * functions.We_W0P.from_translation(mu)
 def generateNewtonPairings(b):
-	newton = b.newton_point if len(parts[2]>2) else functions.W.one()
+	newton = b.newton_point
 	pairings = tuple(newton.scalar(alpha) for alpha in functions.simple_roots)
 	return ','.join(str(p) for p in pairings)
 def fetchInfo(w, b):
