@@ -157,7 +157,7 @@ def insertSingleInfo(w, b, empty=None, dimension=None, components=None, polynomi
 		data += [wenc, newton_pairings]
 		statement = '''UPDATE [TABLENAME] SET '''
 		statement += ', '.join(statements)
-		statement += ' WHERE w_encoded = %s AND newton_pairings = %s LIMIT 1'
+		statement += ' WHERE w_encoded = %s AND newton_pairings = %s'
 		exec(statement, tuple(data))
 def ADLVDimensions(w, b=None, classPolynomial=False,verbose=None,outstream=None):
 	if verbose is not None:
