@@ -1,5 +1,5 @@
 import functions
-import MySQLdb
+import importlib
 import hashlib
 import sage.all
 import sys
@@ -8,9 +8,10 @@ import argparse
 dbHandler = None
 dbCursor = None
 dbTablename = None
-def openDatabase(host='localhost', port=3306, user='root', password='', db='adlv',tablename='adlv'):
+def openDatabase(modulename = 'MySQLdb', host='localhost', port=3306, user='root', password='', db='adlv',tablename='adlv'):
 	global dbHandler, dbCursor, dbTablename
-	dbHandler = MySQLdb.connect(host=host, port=port, user=user, password=password, db=db)
+	db_module = importlib.import_module(modulename)
+	dbHandler = db_module.connect(host=host, port=port, user=user, password=password, db=db)
 	dbHandler.autocommit(True)
 	dbTablename = tablename
 	dbCursor = dbHandler.cursor()
@@ -318,6 +319,7 @@ def argparseAddCommonArguments(parser,tablename_default='adlv'):
 	parser.add_argument('--db-pass', default='', help='Password parameter for the MySQL connection')
 	parser.add_argument('--db-database', default='adlv', help='Name of the MySQL database to be used')
 	parser.add_argument('--db-tablename', default=tablename_default, help='Name of the MySQL table to be used (will be created if not exists)')
+	parser.add_argument('--db-pythonmodule', default='MySQLdb', help='Name of the python3 module to import for the database connection')
 def initializeFromArgparse(args,createTableData=None):
 	functions.initializeFromArgparse(args)
 	openDatabase(host=args.db_host, port=args.db_port, user=args.db_user, password=args.db_pass, db=args.db_database, tablename=args.db_tablename)
